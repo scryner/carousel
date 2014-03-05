@@ -35,7 +35,7 @@ func NewServer(port int, enableGzip bool, workingPath string, rendFunc renderer.
 
 	serveHTTP := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
-			logger.Infof("%s - \"%s %s\" - \"%s\"", r.Host, r.Method, r.URL.Path, r.UserAgent())
+			logger.Debugf("%s - \"%s %s\" - \"%s\"", r.Host, r.Method, r.URL.Path, r.UserAgent())
 		}()
 
 		path := r.URL.Path

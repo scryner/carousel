@@ -16,13 +16,14 @@ const (
 	VERSION  = "0.1"
 
 	_DEFAULT_PORT      = 3999
-	_DEFAULT_LOG_LEVEL = logg.LOG_LEVEL_DEBUG
+	_DEFAULT_LOG_LEVEL = logg.LOG_LEVEL_INFO
 )
 
 var (
 	port       int
 	logFile    string
 	enableGzip bool
+	verbose    bool
 
 	logger *logg.Logger
 )
@@ -31,6 +32,7 @@ func init() {
 	flag.IntVar(&port, "p", _DEFAULT_PORT, "listen port")
 	flag.StringVar(&logFile, "log", "stderr", "specify log file (stdout/stderr means standard io)")
 	flag.BoolVar(&enableGzip, "z", true, "whether gzip supported or not")
+	flag.BoolVar(&verbose, "V", false, "logging verbosely")
 
 	flag.Usage = func() {
 		fmt.Printf("%s Version %s\n", APP_NAME, VERSION)
@@ -60,17 +62,25 @@ func main() {
 		os.Exit(1)
 	}()
 
+	var logLevel logg.LogLevel
+
+	if verbose {
+		logLevel = logg.LOG_LEVEL_DEBUG
+	} else {
+		logLevel = _DEFAULT_LOG_LEVEL
+	}
+
 	switch logFile {
 	case "stdout":
-		logg.SetDefaultLogger(os.Stdout, _DEFAULT_LOG_LEVEL)
+		logg.SetDefaultLogger(os.Stdout, logLevel)
 	case "stderr":
-		logg.SetDefaultLogger(os.Stderr, _DEFAULT_LOG_LEVEL)
+		logg.SetDefaultLogger(os.Stderr, logLevel)
 	default:
 		f, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
-			logg.SetDefaultLogger(os.Stderr, _DEFAULT_LOG_LEVEL)
+			logg.SetDefaultLogger(os.Stderr, logLevel)
 		} else {
-			logg.SetDefaultLogger(f, _DEFAULT_LOG_LEVEL)
+			logg.SetDefaultLogger(f, logLevel)
 			defer f.Close()
 		}
 	}
@@ -105,7 +115,6 @@ func main() {
 	}
 
 	// initializing server
-	logger.Infof("starting server at localhost:%d", port)
 	srv := server.NewServer(port, enableGzip, workingPath, rendFunc, staticFiles)
 
 	// starting server
