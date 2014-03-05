@@ -9,14 +9,45 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
+	"os"
 	"unicode/utf8"
 )
 
 var _utf8_bom_header []byte = []byte{0xef, 0xbb, 0xbf}
 
-type FileRenderer struct{}
+type FileRenderer struct {
+	filepath string
+	rendFun  renderFunc
+}
 
-func (rend *FileRenderer) GetRenderFunc(r io.Reader) (renderFunc RenderFunc, err error) {
+func NewFileRenderer(filepath string) *FileRenderer {
+	return &FileRenderer{
+		filepath: filepath,
+	}
+}
+
+func (rend *FileRenderer) Render(w io.Writer) error {
+	if rend.rendFun == nil {
+		if err := rend.Refresh(); err != nil {
+			return err
+		}
+	}
+
+	return rend.rendFun(w)
+}
+
+func (rend *FileRenderer) Refresh() error {
+	f, err := os.Open(rend.filepath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	rend.rendFun, err = getRenderFunc(f)
+	return err
+}
+
+func getRenderFunc(r io.Reader) (rendFunc renderFunc, err error) {
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return
@@ -66,8 +97,8 @@ func (rend *FileRenderer) GetRenderFunc(r io.Reader) (renderFunc RenderFunc, err
 		return
 	}
 
-	renderFunc = RenderFunc(func(w io.Writer) {
-		doc.Render(w, tmpl)
+	rendFunc = renderFunc(func(w io.Writer) error {
+		return doc.Render(w, tmpl)
 	})
 
 	return

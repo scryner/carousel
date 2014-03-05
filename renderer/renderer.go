@@ -4,8 +4,9 @@ import (
 	"io"
 )
 
-type RenderFunc func(io.Writer)
+type renderFunc func(io.Writer) error
 
 type Renderer interface {
-	GetRenderFunc(r io.Reader) (RenderFunc, error)
+	Render(w io.Writer) error
+	Refresh() error
 }

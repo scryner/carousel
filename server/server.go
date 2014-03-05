@@ -18,18 +18,18 @@ type Server struct {
 	gzipHttpServer
 	staticFiles map[string]StaticContent
 	workingPath string
-	rendFunc    renderer.RenderFunc
+	rend        renderer.Renderer
 
 	logger *logg.Logger
 }
 
-func NewServer(port int, enableGzip bool, workingPath string, rendFunc renderer.RenderFunc, staticFiles map[string]StaticContent) *Server {
+func NewServer(port int, enableGzip bool, workingPath string, rend renderer.Renderer, staticFiles map[string]StaticContent) *Server {
 	logger := logg.GetDefaultLogger("server")
 
 	srv := &Server{
 		logger:      logger,
 		workingPath: workingPath,
-		rendFunc:    rendFunc,
+		rend:        rend,
 		staticFiles: staticFiles,
 	}
 
@@ -43,6 +43,9 @@ func NewServer(port int, enableGzip bool, workingPath string, rendFunc renderer.
 		switch path {
 		case "/":
 			srv.handleSlides(w, r)
+
+		case "/refresh":
+			srv.handleRefresh(w, r)
 
 		default:
 			srv.serveStaticFile(w, r, path)
@@ -93,5 +96,17 @@ func (srv *Server) serveStaticFile(w http.ResponseWriter, r *http.Request, path 
 
 func (srv *Server) handleSlides(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/html; charset=utf-8")
-	srv.rendFunc(w)
+	err := srv.rend.Render(w)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error while rendering: %v", err), http.StatusInternalServerError)
+	}
+}
+
+func (srv *Server) handleRefresh(w http.ResponseWriter, r *http.Request) {
+	err := srv.rend.Refresh()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error while refreshing: %v", err), http.StatusInternalServerError)
+	}
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }

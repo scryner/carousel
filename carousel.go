@@ -94,28 +94,13 @@ func main() {
 	staticFiles["/static/print.css"] = server.StaticContent{"text/css", static.Print_css}
 	staticFiles["/static/styles.css"] = server.StaticContent{"text/css", static.Styles_css}
 
-	// parsing input file
-	f, err := os.Open(inputFile)
-	if err != nil {
-		logger.Errorf("can't read file: %v", err)
-		return
-	}
-
-	workingPath := path.Dir(f.Name())
-
-	defer f.Close()
+	workingPath := path.Dir(inputFile)
 
 	var rend renderer.Renderer
-	rend = new(renderer.FileRenderer)
-
-	rendFunc, err := rend.GetRenderFunc(f)
-	if err != nil {
-		logger.Errorf("can't get renderer function: %v", err)
-		return
-	}
+	rend = renderer.NewFileRenderer(inputFile)
 
 	// initializing server
-	srv := server.NewServer(port, enableGzip, workingPath, rendFunc, staticFiles)
+	srv := server.NewServer(port, enableGzip, workingPath, rend, staticFiles)
 
 	// starting server
 	srv.Start()
