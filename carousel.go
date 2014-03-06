@@ -15,7 +15,7 @@ import (
 
 const (
 	APP_NAME = "Carousel"
-	VERSION  = "0.1"
+	VERSION  = "0.1.1"
 
 	_DEFAULT_PORT      = 3999
 	_DEFAULT_LOG_LEVEL = logg.LOG_LEVEL_INFO

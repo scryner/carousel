@@ -10,19 +10,20 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"unicode/utf8"
 )
 
 var _utf8_bom_header []byte = []byte{0xef, 0xbb, 0xbf}
 
 type FileRenderer struct {
-	filepath string
+	filename string
 	rendFun  renderFunc
 }
 
-func NewFileRenderer(filepath string) *FileRenderer {
+func NewFileRenderer(filename string) *FileRenderer {
 	return &FileRenderer{
-		filepath: filepath,
+		filename: filename,
 	}
 }
 
@@ -37,18 +38,21 @@ func (rend *FileRenderer) Render(w io.Writer) error {
 }
 
 func (rend *FileRenderer) Refresh() error {
-	f, err := os.Open(rend.filepath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+	var err error
+	rend.rendFun, err = getRenderFunc(rend.filename)
 
-	rend.rendFun, err = getRenderFunc(f)
 	return err
 }
 
-func getRenderFunc(r io.Reader) (rendFunc renderFunc, err error) {
-	b, err := ioutil.ReadAll(r)
+func getRenderFunc(filename string) (rendFunc renderFunc, err error) {
+	// read file
+	f, err := os.Open(filename)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	b, err := ioutil.ReadAll(f)
 	if err != nil {
 		return
 	}
@@ -82,7 +86,7 @@ func getRenderFunc(r io.Reader) (rendFunc renderFunc, err error) {
 
 	// parse
 	nr := bytes.NewBuffer(b)
-	doc, err := present.Parse(nr, "slides", 0)
+	doc, err := parseDocument(nr, filepath.Dir(filename), "slides", 0)
 	if err != nil {
 		err = fmt.Errorf("while parsing: %v", err.Error())
 		return
@@ -123,4 +127,13 @@ func parseTemplates(t *template.Template, ss ...string) (*template.Template, err
 	}
 
 	return t, nil
+}
+
+func parseDocument(r io.Reader, dir, name string, mode present.ParseMode) (*present.Doc, error) {
+	readFile := func(filename string) ([]byte, error) {
+		return ioutil.ReadFile(filepath.Join(dir, filename))
+	}
+
+	ctx := present.Context{ReadFile: readFile}
+	return ctx.Parse(r, name, mode)
 }
