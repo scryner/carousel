@@ -7,8 +7,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/scryner/logg"
+	"net"
 	"os"
 	"path"
+	"time"
 )
 
 const (
@@ -20,10 +22,11 @@ const (
 )
 
 var (
-	port       int
-	logFile    string
-	enableGzip bool
-	verbose    bool
+	port          int
+	logFile       string
+	enableGzip    bool
+	verbose       bool
+	launchAtStart bool
 
 	logger *logg.Logger
 )
@@ -32,6 +35,7 @@ func init() {
 	flag.IntVar(&port, "p", _DEFAULT_PORT, "listen port")
 	flag.StringVar(&logFile, "log", "stderr", "specify log file (stdout/stderr means standard io)")
 	flag.BoolVar(&enableGzip, "z", true, "whether gzip supported or not")
+	flag.BoolVar(&launchAtStart, "l", false, "launch local web browser immediately")
 	flag.BoolVar(&verbose, "V", false, "logging verbosely")
 
 	flag.Usage = func() {
@@ -102,6 +106,24 @@ func main() {
 	// initializing server
 	srv := server.NewServer(port, enableGzip, workingPath, rend, staticFiles)
 
+	// trying to launch web browser
+	if launchAtStart {
+		go tryLaunchWebBrowser()
+	}
+
 	// starting server
 	srv.Start()
+}
+
+func tryLaunchWebBrowser() {
+	for {
+		c, err := net.Dial("tcp", fmt.Sprintf("localhost:%d", port))
+		if err == nil {
+			c.Close()
+			break
+		}
+		time.Sleep(time.Millisecond * 500)
+	}
+
+	launchWebBrowser()
 }
