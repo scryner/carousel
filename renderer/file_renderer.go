@@ -5,6 +5,7 @@ import (
 	"carousel/templates"
 	"code.google.com/p/go.tools/present"
 	"fmt"
+	"github.com/scryner/logg"
 	"github.com/suapapa/go_hangul/encoding/cp949"
 	"html/template"
 	"io"
@@ -20,14 +21,15 @@ type FileRenderer struct {
 	filename    string
 	rendFun     renderFunc
 	playEnabled bool
-	socketAddr  string
+
+	logger *logg.Logger
 }
 
-func NewFileRenderer(filename string, playEnabled bool, socketAddr string) *FileRenderer {
+func NewFileRenderer(filename string, playEnabled bool) *FileRenderer {
 	return &FileRenderer{
 		filename:    filename,
 		playEnabled: playEnabled,
-		socketAddr:  socketAddr,
+		logger:      logg.GetDefaultLogger("renderer"),
 	}
 }
 
@@ -42,13 +44,15 @@ func (rend *FileRenderer) Render(w io.Writer) error {
 }
 
 func (rend *FileRenderer) Refresh() error {
+	rend.logger.Debugf("renderer will be refreshed")
+
 	var err error
-	rend.rendFun, err = getRenderFunc(rend.filename, rend.playEnabled, rend.socketAddr)
+	rend.rendFun, err = getRenderFunc(rend.filename, rend.playEnabled)
 
 	return err
 }
 
-func getRenderFunc(filename string, playEnabled bool, socketAddr string) (rendFunc renderFunc, err error) {
+func getRenderFunc(filename string, playEnabled bool) (rendFunc renderFunc, err error) {
 	// read file
 	f, err := os.Open(filename)
 	if err != nil {
@@ -118,8 +122,7 @@ func getRenderFunc(filename string, playEnabled bool, socketAddr string) (rendFu
 			*present.Doc
 			Template    *template.Template
 			PlayEnabled bool
-			SocketAddr  string
-		}{doc, tmpl, playEnabled, socketAddr}
+		}{doc, tmpl, playEnabled}
 		return tmpl.ExecuteTemplate(w, "root", data)
 	})
 
@@ -127,7 +130,8 @@ func getRenderFunc(filename string, playEnabled bool, socketAddr string) (rendFu
 }
 
 func playable(c present.Code) bool {
-	return present.PlayEnabled && c.Play
+	// return present.PlayEnabled && c.Play
+	return present.PlayEnabled
 }
 
 func parseTemplates(t *template.Template, ss ...string) (*template.Template, error) {

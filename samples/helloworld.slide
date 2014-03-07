@@ -10,5 +10,27 @@ scryner@gmail.com
 - User can handle some code in the slide show!
 
 * Hello, world!
+Just a code
+
+    package main
+
+    import "fmt"
+
+    func main() {
+        fmt.Println("Hello, world")
+        fmt.Println("안녕, 세계야")
+    }
+
+* Hello, world!
+Playable version
 
 .play helloworld/helloworld.go
+
+You can modify and play instantly!
+
+* One more thing...
+Plan to supporting more languages.
+- python
+- ...
+
+But, it may be harmful to entire system security.

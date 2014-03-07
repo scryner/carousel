@@ -27,7 +27,9 @@ var (
 	enableGzip    bool
 	verbose       bool
 	launchAtStart bool
-	playEnabled   bool
+
+	playEnabled      bool
+	remotePlayground bool
 
 	logger *logg.Logger
 )
@@ -39,6 +41,7 @@ func init() {
 	flag.BoolVar(&launchAtStart, "l", false, "launch local web browser immediately")
 	flag.BoolVar(&verbose, "V", false, "logging verbosely")
 	flag.BoolVar(&playEnabled, "P", false, "enable go playground")
+	flag.BoolVar(&remotePlayground, "R", false, "go playground via Go official site")
 
 	flag.Usage = func() {
 		fmt.Printf("%s Version %s\n", APP_NAME, VERSION)
@@ -95,15 +98,28 @@ func main() {
 
 	// initializing static file list
 	staticFiles := make(map[string]server.StaticContent)
-	staticFiles["/static/play.js"] = server.StaticContent{"text/javascript", static.Play_js}
 	staticFiles["/static/slides.js"] = server.StaticContent{"text/javascript", static.Slides_js}
 	staticFiles["/static/print.css"] = server.StaticContent{"text/css", static.Print_css}
 	staticFiles["/static/styles.css"] = server.StaticContent{"text/css", static.Styles_css}
 
+	if playEnabled {
+		logger.Infof("Go playground enabled")
+
+		if remotePlayground {
+			logger.Infof("\t: to Go official playground by HTTP")
+			staticFiles["/static/play.js"] = server.StaticContent{"text/javascript", static.Play_js + "\ninitPlayground(new HTTPTransport());\n"}
+		} else {
+			logger.Infof("\t: to local playground by WebSocket")
+			staticFiles["/static/play.js"] = server.StaticContent{"text/javascript", static.Play_js + "\ninitPlayground(new SocketTransport());\n"}
+		}
+	} else {
+		logger.Infof("Go playground disabled")
+	}
+
 	workingPath := path.Dir(inputFile)
 
 	var rend renderer.Renderer
-	rend = renderer.NewFileRenderer(inputFile, playEnabled, getSocketAddr())
+	rend = renderer.NewFileRenderer(inputFile, playEnabled)
 
 	// initializing server
 	srv := server.NewServer(port, enableGzip, workingPath, rend, staticFiles)
@@ -130,6 +146,7 @@ func tryLaunchWebBrowser() {
 	launchWebBrowser()
 }
 
+// Actually below codes are not needed any more
 func getSocketAddr() string {
 	_, localIp, err := getHostnameAndLocalIpAddress()
 	if err != nil {

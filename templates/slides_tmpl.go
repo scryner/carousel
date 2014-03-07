@@ -52,10 +52,6 @@ const Slides_tmpl = `
   </body>
   {{if .PlayEnabled}}
   <script src='/static/play.js'></script>
-  <script>
-  window.transport = SocketTransport();
-  window.socketAddr = "{{.SocketAddr}}";
-  </script>
   {{end}}
 </html>
 {{end}}

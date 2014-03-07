@@ -4770,6 +4770,4 @@ function initPlayground(transport) {
     }
 }
 
-
-initPlayground(new HTTPTransport());
 `

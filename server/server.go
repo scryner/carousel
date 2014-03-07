@@ -35,11 +35,11 @@ func NewServer(port int, enableGzip bool, workingPath string, rend renderer.Rend
 	}
 
 	serveHTTP := func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			logger.Debugf("%s - \"%s %s\" - \"%s\"", r.Host, r.Method, r.URL.Path, r.UserAgent())
-		}()
-
 		path := r.URL.Path
+
+		defer func() {
+			logger.Debugf("%s - \"%s %s\" - \"%s\"", r.Host, r.Method, path, r.UserAgent())
+		}()
 
 		switch path {
 		case "/":
@@ -83,10 +83,10 @@ func (srv *Server) serveStaticFile(w http.ResponseWriter, r *http.Request, path 
 	if content, ok := srv.staticFiles[path]; ok {
 		switch t := content.Content.(type) {
 		case string:
-			w.Header().Add("Content-Type", content.Mine+"; charset=utf-8")
+			w.Header().Set("Content-Type", content.Mine+"; charset=utf-8")
 			w.Write([]byte(t))
 		case []byte:
-			w.Header().Add("Content-Type", content.Mine)
+			w.Header().Set("Content-Type", content.Mine)
 			w.Write(t)
 		case FilePath:
 			http.ServeFile(w, r, string(t))
@@ -102,7 +102,7 @@ func (srv *Server) serveStaticFile(w http.ResponseWriter, r *http.Request, path 
 }
 
 func (srv *Server) handleSlides(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err := srv.rend.Render(w)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error while rendering: %v", err), http.StatusInternalServerError)

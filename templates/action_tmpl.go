@@ -21,7 +21,7 @@ It determines how the formatting actions are rendered.
 
 {{define "text"}}
   {{if .Pre}}
-  <div class="code"><pre>{{range .Lines}}{{.}}{{end}}</pre></div>
+  <div class="code" contenteditable="true" spellcheck="false"><pre>{{range .Lines}}{{.}}{{end}}</pre></div>
   {{else}}
   <p>
     {{range $i, $l := .Lines}}{{if $i}}{{template "newline"}}
