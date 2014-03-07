@@ -15,7 +15,7 @@ import (
 
 const (
 	APP_NAME = "Carousel"
-	VERSION  = "0.1.1"
+	VERSION  = "0.2"
 
 	_DEFAULT_PORT      = 3999
 	_DEFAULT_LOG_LEVEL = logg.LOG_LEVEL_INFO
@@ -27,6 +27,7 @@ var (
 	enableGzip    bool
 	verbose       bool
 	launchAtStart bool
+	playEnabled   bool
 
 	logger *logg.Logger
 )
@@ -37,6 +38,7 @@ func init() {
 	flag.BoolVar(&enableGzip, "z", true, "whether gzip supported or not")
 	flag.BoolVar(&launchAtStart, "l", false, "launch local web browser immediately")
 	flag.BoolVar(&verbose, "V", false, "logging verbosely")
+	flag.BoolVar(&playEnabled, "P", false, "enable go playground")
 
 	flag.Usage = func() {
 		fmt.Printf("%s Version %s\n", APP_NAME, VERSION)
@@ -101,7 +103,7 @@ func main() {
 	workingPath := path.Dir(inputFile)
 
 	var rend renderer.Renderer
-	rend = renderer.NewFileRenderer(inputFile)
+	rend = renderer.NewFileRenderer(inputFile, playEnabled, getSocketAddr())
 
 	// initializing server
 	srv := server.NewServer(port, enableGzip, workingPath, rend, staticFiles)
@@ -126,4 +128,35 @@ func tryLaunchWebBrowser() {
 	}
 
 	launchWebBrowser()
+}
+
+func getSocketAddr() string {
+	_, localIp, err := getHostnameAndLocalIpAddress()
+	if err != nil {
+		return fmt.Sprintf("ws://localhost:%d/socket", port)
+	}
+
+	return fmt.Sprintf("ws://%s:%d/socket", localIp, port)
+}
+
+func getHostnameAndLocalIpAddress() (hostname, localIp string, err error) {
+	hostname, err = os.Hostname()
+	if err != nil {
+		return
+	}
+
+	ips, err := net.LookupIP(hostname)
+	if err != nil {
+		return
+	}
+
+	for _, ip := range ips {
+		ip4 := ip.To4()
+		if ip4 != nil {
+			localIp = ip.String()
+			break
+		}
+	}
+
+	return
 }

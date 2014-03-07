@@ -1,9 +1,11 @@
 package server
 
 import (
+	"bufio"
 	"compress/gzip"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -16,10 +18,10 @@ type gzipHttpServer struct {
 	serveHTTP func(w http.ResponseWriter, r *http.Request)
 }
 
-var _server *http.Server // preventing unwilled garbage collection
+//var _server *http.Server // preventing unwilled garbage collection
 
 func (srv *gzipHttpServer) start() error {
-	_server = &http.Server{
+	_server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", srv.port),
 		Handler: http.HandlerFunc(getHandler(srv)),
 	}
@@ -34,6 +36,10 @@ type gzipResponseWriter struct {
 
 func (w gzipResponseWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
+}
+
+func (w gzipResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return w.ResponseWriter.(http.Hijacker).Hijack()
 }
 
 // gzip.Reader.Close() does not close underlying reader, so we need to close at the end.
@@ -57,6 +63,20 @@ func (r gzipBodyReader) Close() error {
 
 func getHandler(srv *gzipHttpServer) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// handing content-encoding: gzip
+		if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+			compressedBody := r.Body
+
+			gr, err := gzip.NewReader(compressedBody)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			newBody := gzipBodyReader{compressedBody, gzipReader{gr}}
+			r.Body = newBody
+		}
+
 		// handling accept-decooding: gzip
 		if !srv.enableGzip || !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") || !isGzipAble(r) {
 			srv.serveHTTP(w, r)

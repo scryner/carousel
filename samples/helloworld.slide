@@ -1,0 +1,14 @@
+Hello, world!
+(A sample for playground)
+
+scryner
+@scryner
+scryner@gmail.com
+
+* Playground
+- Go playgound run go code through HTTP web socket.
+- User can handle some code in the slide show!
+
+* Hello, world!
+
+.play helloworld/helloworld.go

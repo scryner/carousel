@@ -6,7 +6,7 @@ import (
 )
 
 func launchWebBrowser() {
-	cmd := exec.Command("x-www-browser", fmt.Sprintf("http://localhost:%d", port))
+	cmd := exec.Command("xdg-open", fmt.Sprintf("http://localhost:%d", port))
 
 	go func() {
 		err := cmd.Start()

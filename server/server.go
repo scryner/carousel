@@ -2,6 +2,7 @@ package server
 
 import (
 	"carousel/renderer"
+	"code.google.com/p/go.tools/playground/socket"
 	"fmt"
 	"github.com/scryner/logg"
 	"net/http"
@@ -46,6 +47,12 @@ func NewServer(port int, enableGzip bool, workingPath string, rend renderer.Rend
 
 		case "/refresh":
 			srv.handleRefresh(w, r)
+
+		case "/socket":
+			socket.Handler.ServeHTTP(w, r)
+
+		case "/compile":
+			srv.handleRedirectToGoPlaygroundAppEngine(w, r)
 
 		default:
 			srv.serveStaticFile(w, r, path)

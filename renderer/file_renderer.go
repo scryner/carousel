@@ -17,13 +17,17 @@ import (
 var _utf8_bom_header []byte = []byte{0xef, 0xbb, 0xbf}
 
 type FileRenderer struct {
-	filename string
-	rendFun  renderFunc
+	filename    string
+	rendFun     renderFunc
+	playEnabled bool
+	socketAddr  string
 }
 
-func NewFileRenderer(filename string) *FileRenderer {
+func NewFileRenderer(filename string, playEnabled bool, socketAddr string) *FileRenderer {
 	return &FileRenderer{
-		filename: filename,
+		filename:    filename,
+		playEnabled: playEnabled,
+		socketAddr:  socketAddr,
 	}
 }
 
@@ -39,12 +43,12 @@ func (rend *FileRenderer) Render(w io.Writer) error {
 
 func (rend *FileRenderer) Refresh() error {
 	var err error
-	rend.rendFun, err = getRenderFunc(rend.filename)
+	rend.rendFun, err = getRenderFunc(rend.filename, rend.playEnabled, rend.socketAddr)
 
 	return err
 }
 
-func getRenderFunc(filename string) (rendFunc renderFunc, err error) {
+func getRenderFunc(filename string, playEnabled bool, socketAddr string) (rendFunc renderFunc, err error) {
 	// read file
 	f, err := os.Open(filename)
 	if err != nil {
@@ -84,6 +88,13 @@ func getRenderFunc(filename string) (rendFunc renderFunc, err error) {
 		b = b[len(_utf8_bom_header):]
 	}
 
+	// set playable
+	if playEnabled {
+		present.PlayEnabled = true
+	} else {
+		present.PlayEnabled = false
+	}
+
 	// parse
 	nr := bytes.NewBuffer(b)
 	doc, err := parseDocument(nr, filepath.Dir(filename), "slides", 0)
@@ -92,6 +103,7 @@ func getRenderFunc(filename string) (rendFunc renderFunc, err error) {
 		return
 	}
 
+	// templating
 	tmpl := present.Template()
 	tmpl = tmpl.Funcs(template.FuncMap{"playable": playable})
 
@@ -102,14 +114,20 @@ func getRenderFunc(filename string) (rendFunc renderFunc, err error) {
 	}
 
 	rendFunc = renderFunc(func(w io.Writer) error {
-		return doc.Render(w, tmpl)
+		data := struct {
+			*present.Doc
+			Template    *template.Template
+			PlayEnabled bool
+			SocketAddr  string
+		}{doc, tmpl, playEnabled, socketAddr}
+		return tmpl.ExecuteTemplate(w, "root", data)
 	})
 
 	return
 }
 
 func playable(c present.Code) bool {
-	return false
+	return present.PlayEnabled && c.Play
 }
 
 func parseTemplates(t *template.Template, ss ...string) (*template.Template, error) {
