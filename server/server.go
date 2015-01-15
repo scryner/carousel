@@ -49,7 +49,8 @@ func NewServer(port int, enableGzip bool, workingPath string, rend renderer.Rend
 			srv.handleRefresh(w, r)
 
 		case "/socket":
-			socket.Handler.ServeHTTP(w, r)
+            wsSrv := socket.NewHandler(r.URL)
+			wsSrv.Handler.ServeHTTP(w, r)
 
 		case "/compile":
 			srv.handleRedirectToGoPlaygroundAppEngine(w, r)

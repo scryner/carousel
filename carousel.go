@@ -129,6 +129,9 @@ func main() {
 		go tryLaunchWebBrowser()
 	}
 
+    // print logo
+    fmt.Printf(asciiLogo, VERSION);
+
 	// starting server
 	srv.Start()
 }
