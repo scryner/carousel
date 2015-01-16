@@ -1,0 +1,28 @@
+{
+	"ImportPath": "carousel",
+	"GoVersion": "go1.4",
+	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/go.tools/playground/socket",
+			"Comment": "null-1259",
+			"Rev": "a7e14835e46bb13da10fa8b9c9c5e7f2f378f568"
+		},
+		{
+			"ImportPath": "code.google.com/p/go.tools/present",
+			"Comment": "null-1259",
+			"Rev": "a7e14835e46bb13da10fa8b9c9c5e7f2f378f568"
+		},
+		{
+			"ImportPath": "github.com/scryner/logg",
+			"Rev": "ef92ab698fdf6ededede0793a26b548938cf1562"
+		},
+		{
+			"ImportPath": "github.com/suapapa/go_hangul/encoding/cp949",
+			"Rev": "8199ba63e765bbacb48115182cbda9cfb98c4b78"
+		},
+		{
+			"ImportPath": "golang.org/x/net/websocket",
+			"Rev": "ca657d0bd9d9b4f73523118b59af79e5374b9908"
+		}
+	]
+}
